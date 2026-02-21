@@ -4,26 +4,39 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 
 export default function EmailAnalysis() {
   const handleScan = async (input: string) => {
-    // Mock Logic
-    const isPhishing = input.toLowerCase().includes("urgent") || input.toLowerCase().includes("bank") || input.toLowerCase().includes("password");
-    
-    return {
-      risk: isPhishing ? "high" : "low",
-      score: isPhishing ? 98 : 12,
-      icon: isPhishing ? AlertTriangle : ShieldCheck,
-      summary: isPhishing 
-        ? "High probability of AI-generated phishing content detected. The text exhibits patterns consistent with social engineering attacks, including urgency vectors and request for sensitive credentials."
-        : "The email content appears clean. No malicious patterns or AI-generation artifacts were detected in the text body.",
-      details: [
-        { label: "AI Probability", value: isPhishing ? "99.2%" : "4.5%" },
-        { label: "Sentiment", value: isPhishing ? "Urgent/Threatening" : "Neutral" },
-        { label: "Language Model", value: isPhishing ? "GPT-4 (Suspected)" : "Human" },
-        { label: "Entities", value: isPhishing ? "Bank, Password, Account" : "None" },
-      ],
-      actions: isPhishing 
-        ? ["Quarantine email immediately", "Block sender domain", "Reset user credentials if clicked"]
-        : ["No action needed", "Mark as safe"]
-    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: input })
+      });
+
+      const data = await response.json();
+      const isPhishing = data.is_phishing;
+
+      return {
+        risk: isPhishing ? "high" : "low",
+        score: data.confidence,
+        icon: isPhishing ? AlertTriangle : ShieldCheck,
+        summary: data.explanation,
+        details: [
+          { label: "AI Probability", value: `${data.confidence}%` },
+          { label: "Sentiment", value: data.sentiment },
+          { label: "Risk Level", value: data.risk_level },
+          { label: "Status", value: isPhishing ? "Threat Detected" : "Clean" },
+        ],
+        actions: data.recommended_actions
+      };
+    } catch (error) {
+      return {
+        risk: "low",
+        score: 0,
+        icon: ShieldCheck,
+        summary: "Could not connect to analysis server. Make sure the Python backend is running.",
+        details: [],
+        actions: ["Restart the Python backend: uvicorn main:app --reload --port 8000"]
+      };
+    }
   };
 
   return (

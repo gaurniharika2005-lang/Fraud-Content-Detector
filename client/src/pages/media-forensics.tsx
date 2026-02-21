@@ -4,26 +4,43 @@ import { AlertTriangle, FileAudio } from "lucide-react";
 
 export default function MediaForensics() {
   const handleScan = async (input: string) => {
-    // Mock Logic
-    
-    return {
-      risk: "high",
-      score: 92,
-      icon: AlertTriangle,
-      summary: "Deepfake audio detected. Spectral analysis reveals artifacts consistent with TTS synthesis models (ElevenLabs/VALL-E).",
-      details: [
-        { label: "Audio Source", value: "Synthetic (AI)" },
-        { label: "Model Signature", value: "VALL-E / RVC" },
-        { label: "Artifacts", value: "High Frequency Noise" },
-        { label: "Voice Match", value: "CEO (98% Match)" },
-      ],
-      actions: [
-        "Flag as fraudulent",
-        "Notify security team",
-        "Do not authorize any transactions"
-      ]
-    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: input || "media file scan" })
+      });
+
+      const data = await response.json();
+      const isFake = data.is_phishing;
+
+      return {
+        risk: isFake ? "high" : "low",
+        score: data.confidence,
+        icon: isFake ? AlertTriangle : FileAudio,
+        summary: isFake
+          ? "Deepfake content detected. Spectral analysis reveals artifacts consistent with AI synthesis models."
+          : "Media appears authentic. No synthetic artifacts detected.",
+        details: [
+          { label: "AI Probability", value: `${data.confidence}%` },
+          { label: "Sentiment", value: data.sentiment },
+          { label: "Risk Level", value: data.risk_level },
+          { label: "Status", value: isFake ? "Synthetic/Fake" : "Authentic" },
+        ],
+        actions: data.recommended_actions || []
+      };
+    } catch (error) {
+      return {
+        risk: "low",
+        score: 0,
+        icon: FileAudio,
+        summary: "Could not connect to analysis server.",
+        details: [],
+        actions: ["Restart the Python backend"]
+      };
+    }
   };
+
 
   return (
     <Layout>

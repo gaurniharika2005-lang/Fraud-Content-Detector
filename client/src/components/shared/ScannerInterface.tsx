@@ -228,9 +228,9 @@ export function ScannerInterface({
               <div className="bg-card border border-border p-4 rounded-lg">
                 <h4 className="text-sm font-bold mb-2">Recommended Actions</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside">
-                  {result.actions.map((action: string, i: number) => (
-                    <li key={i}>{action}</li>
-                  ))}
+                 {(result.actions || []).map((action: string, i: number) => (
+  <li key={i}>{action}</li>
+))}
                 </ul>
               </div>
             </motion.div>

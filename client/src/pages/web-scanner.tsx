@@ -4,26 +4,39 @@ import { AlertTriangle, Globe } from "lucide-react";
 
 export default function WebScanner() {
   const handleScan = async (input: string) => {
-    // Mock Logic
-    const isMalicious = input.includes("login") || input.includes("secure") || input.length > 30;
-    
-    return {
-      risk: isMalicious ? "medium" : "low",
-      score: isMalicious ? 75 : 5,
-      icon: isMalicious ? AlertTriangle : Globe,
-      summary: isMalicious 
-        ? "Suspicious website structure detected. The domain uses homograph spoofing techniques and lacks valid SSL certification from a trusted authority."
-        : "Website appears legitimate. SSL certificate is valid and domain reputation is clean.",
-      details: [
-        { label: "Domain Age", value: isMalicious ? "2 Days" : "5 Years" },
-        { label: "SSL Issuer", value: isMalicious ? "Untrusted / Self-signed" : "DigiCert Inc" },
-        { label: "IP Reputation", value: isMalicious ? "Blacklisted" : "Clean" },
-        { label: "Spoofing Type", value: isMalicious ? "Homograph Attack" : "None" },
-      ],
-      actions: isMalicious 
-        ? ["Block access via firewall", "Report to registrar", "Scan for downloaded cookies"]
-        : ["Allow access"]
-    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: input }),
+      });
+
+      const data = await response.json();
+      const isMalicious = data.is_phishing;
+
+      return {
+        risk: isMalicious ? "high" : "low",
+        score: data.confidence,
+        icon: isMalicious ? AlertTriangle : Globe,
+        summary: data.explanation,
+        details: [
+          { label: "AI Probability", value: `${data.confidence}%` },
+          { label: "Sentiment", value: data.sentiment },
+          { label: "Risk Level", value: data.risk_level },
+          { label: "Status", value: isMalicious ? "Threat Detected" : "Clean" },
+        ],
+        actions: data.recommended_actions || [],
+      };
+    } catch (error) {
+      return {
+        risk: "low",
+        score: 0,
+        icon: Globe,
+        summary: "Could not connect to analysis server.",
+        details: [],
+        actions: [],
+      };
+    }
   };
 
   return (

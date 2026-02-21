@@ -4,26 +4,41 @@ import { AlertTriangle, KeyRound } from "lucide-react";
 
 export default function CredentialGuard() {
   const handleScan = async (input: string) => {
-    // Mock Logic
-    const isLeaked = input.includes("@");
-    
-    return {
-      risk: isLeaked ? "high" : "low",
-      score: isLeaked ? 100 : 0,
-      icon: isLeaked ? AlertTriangle : KeyRound,
-      summary: isLeaked 
-        ? "CRITICAL: Credentials found in 4 known dark web breaches. This account is compromised."
-        : "No breaches found for this identifier in our database.",
-      details: [
-        { label: "Total Breaches", value: isLeaked ? "4" : "0" },
-        { label: "Last Seen", value: isLeaked ? "2024-02-10" : "N/A" },
-        { label: "Data Exposed", value: isLeaked ? "Password, IP, Phone" : "None" },
-        { label: "Source", value: isLeaked ? "Collection #1" : "N/A" },
-      ],
-      actions: isLeaked 
-        ? ["Force password reset", "Enable MFA immediately", "Revoke active sessions"]
-        : ["Monitor account"]
-    };
+    try {
+      const response = await fetch("http://127.0.0.1:8000/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: input })
+      });
+
+      const data = await response.json();
+      const isLeaked = data.is_phishing;
+
+      return {
+        risk: isLeaked ? "high" : "low",
+        score: data.confidence,
+        icon: isLeaked ? AlertTriangle : KeyRound,
+        summary: isLeaked
+          ? "CRITICAL: Suspicious credential patterns detected. This account may be compromised."
+          : "No threats found for this identifier.",
+        details: [
+          { label: "AI Probability", value: `${data.confidence}%` },
+          { label: "Sentiment", value: data.sentiment },
+          { label: "Risk Level", value: data.risk_level },
+          { label: "Status", value: isLeaked ? "Compromised" : "Safe" },
+        ],
+        actions: data.recommended_actions || []
+      };
+    } catch (error) {
+      return {
+        risk: "low",
+        score: 0,
+        icon: KeyRound,
+        summary: "Could not connect to analysis server.",
+        details: [],
+        actions: ["Restart the Python backend"]
+      };
+    }
   };
 
   return (
