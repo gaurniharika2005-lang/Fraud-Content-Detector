@@ -29,7 +29,7 @@ export function Sidebar() {
           <ShieldAlert className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="font-mono font-bold text-lg tracking-wider text-sidebar-foreground">SENTINEL<span className="text-primary">AI</span></h1>
+          <h1 className="font-mono font-bold text-lg tracking-wider text-sidebar-foreground">DeFraud<span className="text-primary"></span></h1>
           <p className="text-xs text-muted-foreground font-mono">V.2.0.4 BETA</p>
         </div>
       </div>
